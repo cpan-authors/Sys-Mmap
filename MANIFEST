@@ -9,4 +9,5 @@ Mmap.xs
 README
 t/mmap.t
 t/munmap_errors.t
+t/offset.t
 xt/author/pod.t
