@@ -229,7 +229,10 @@ mmap(var, len, prot, flags, fh = 0, off_string)
 	      if (fstat(fd, &st) == -1) {
                   croak("mmap: no len provided, fstat failed, unable to infer length");
               }
-	      len = st.st_size;
+	      if (off >= st.st_size) {
+	          croak("mmap: offset (%"IVdf") is at or beyond end of file (size %"IVdf")", (IV)off, (IV)st.st_size);
+	      }
+	      len = st.st_size - off;
 	  }
         }
 
