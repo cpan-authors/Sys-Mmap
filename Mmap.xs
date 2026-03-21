@@ -347,6 +347,12 @@ munmap(var)
                 info->base_addr = NULL;  /* prevent double munmap in magic free */
             } else {
                 /* fallback for hardwire'd or legacy variables without magic */
+                /* SvLEN > 0 means this is a regular Perl string, not mmap'd */
+                if (SvLEN(var) != 0) {
+                    errno = EINVAL;
+                    croak("munmap failed! errno %d %s\n", errno, strerror(errno));
+                    return;
+                }
                 if (munmap((MMAP_RETTYPE) SvPVX(var), SvCUR(var)) == -1) {
                     croak("munmap failed! errno %d %s\n", errno, strerror(errno));
                     return;
@@ -361,7 +367,7 @@ munmap(var)
         ST(0) = &PL_sv_yes;
 
 void
-DESTROY(var) 
+DESTROY(var)
     SV *     var
     PROTOTYPE: $
     CODE:
@@ -378,6 +384,9 @@ DESTROY(var)
                     info->base_addr = NULL;
                 }
             } else {
+                /* SvLEN > 0 means this is a regular Perl string, not mmap'd */
+                if (SvLEN(var) != 0)
+                    return;
                 if (munmap((MMAP_RETTYPE) SvPVX(var), SvCUR(var)) == -1) {
                     croak("munmap failed! errno %d %s\n", errno, strerror(errno));
                     return;
