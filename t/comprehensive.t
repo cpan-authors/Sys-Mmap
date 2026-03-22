@@ -27,12 +27,9 @@ sub create_test_file {
 {
     my $content = create_test_file(4096);
 
-    # The tied interface's DESTROY has a pre-existing issue: it receives
-    # the blessed reference SV, not the mmap'd SV, so munmap fails with
-    # EINVAL during cleanup. Suppress the resulting warnings.
-    local $SIG{__WARN__} = sub {
-        warn $_[0] unless $_[0] =~ /munmap failed|untie attempted/;
-    };
+    # Collect any warnings during tied cleanup to verify no munmap failures
+    my @warnings;
+    local $SIG{__WARN__} = sub { push @warnings, $_[0] };
 
     {
         my $var;
@@ -48,15 +45,18 @@ sub create_test_file {
         is(substr($var, 0, length($new_data)), $new_data, "tied file: STORE writes data at beginning");
         # Rest of mapping should be unchanged
         is(substr($var, length($new_data), 4), substr($content, length($new_data), 4), "tied file: STORE preserves rest of data");
-        # Let $var and $obj go out of scope together to avoid untie warnings
+        # Let $var and $obj go out of scope together
     }
     pass("tied file: variable cleaned up without crash");
+
+    # The DESTROY fix should prevent munmap failures on the blessed reference
+    my @munmap_warns = grep { /munmap failed/ } @warnings;
+    is(scalar @munmap_warns, 0, "tied file: no munmap failures during DESTROY cleanup");
 }
 
 {
-    local $SIG{__WARN__} = sub {
-        warn $_[0] unless $_[0] =~ /munmap failed|untie attempted/;
-    };
+    my @warnings;
+    local $SIG{__WARN__} = sub { push @warnings, $_[0] };
 
     {
         my $var;
@@ -69,12 +69,14 @@ sub create_test_file {
         is(substr($var, 0, 9), "test data", "tied anon: STORE works on anonymous memory");
     }
     pass("tied anon: anonymous memory cleaned up without crash");
+
+    my @munmap_warns = grep { /munmap failed/ } @warnings;
+    is(scalar @munmap_warns, 0, "tied anon: no munmap failures during DESTROY cleanup");
 }
 
 {
-    local $SIG{__WARN__} = sub {
-        warn $_[0] unless $_[0] =~ /munmap failed|untie attempted/;
-    };
+    my @warnings;
+    local $SIG{__WARN__} = sub { push @warnings, $_[0] };
 
     # Create a tiny file
     create_test_file(100);
@@ -89,6 +91,9 @@ sub create_test_file {
 
     # File should have been grown to 4096
     ok(-s $temp_file >= 4096, "tied grow: file was grown to requested length");
+
+    my @munmap_warns = grep { /munmap failed/ } @warnings;
+    is(scalar @munmap_warns, 0, "tied grow: no munmap failures during DESTROY cleanup");
 }
 
 # ---- MAP_ANON tests ----
