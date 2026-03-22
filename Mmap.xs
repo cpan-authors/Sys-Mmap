@@ -372,6 +372,12 @@ DESTROY(var)
     PROTOTYPE: $
     CODE:
         /* XXX refrain from dumping core if this var wasnt previously mmap'd*/
+
+        /* For tied objects: DESTROY receives the blessed reference (\$mmap_sv),
+         * not the mmap'd SV itself.  Dereference to reach the actual mapping. */
+        if (SvROK(var))
+            var = SvRV(var);
+
         {
             MAGIC *mg = find_mmap_magic(var);
             if (mg) {
