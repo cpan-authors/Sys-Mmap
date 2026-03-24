@@ -8,6 +8,7 @@ Mmap.pm
 Mmap.xs
 README
 t/comprehensive.t
+t/hardwire.t
 t/mmap.t
 t/munmap_errors.t
 t/offset.t

@@ -318,7 +318,7 @@ mmap(var, len, prot, flags, fh = 0, off_string)
             mg->mg_flags |= MGf_LOCAL;
         }
 
-        ST(0) = sv_2mortal(newSVnv((IV) addr));
+        ST(0) = sv_2mortal(newSVuv(PTR2UV(addr)));
 
 SV *
 munmap(var)
