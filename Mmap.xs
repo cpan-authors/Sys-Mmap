@@ -31,17 +31,14 @@ extern "C" {
 #endif
 
 static int
-not_here(s)
-char *s;
+not_here(const char *s)
 {
     croak("%s not implemented on this architecture", s);
     return -1;
 }
 
 static double
-constant(name, arg)
-char *name;
-int arg;
+constant(const char *name, int arg)
 {
     errno = 0;
     switch (*name) {
@@ -183,6 +180,15 @@ static MGVTBL mmap_magic_vtbl = {
     0,                /* dup */
     0                 /* local */
 };
+
+/* Reset an SV after its mmap'd region has been unmapped */
+static void mmap_reset_sv(SV *sv) {
+    SvREADONLY_off(sv);
+    SvPVX(sv) = 0;
+    SvCUR_set(sv, 0);
+    SvLEN_set(sv, 0);
+    SvOK_off(sv);
+}
 
 /* Find our mmap magic on an SV, or NULL if not present */
 static MAGIC *find_mmap_magic(SV *sv) {
@@ -359,11 +365,7 @@ munmap(var)
                 }
             }
         }
-        SvREADONLY_off(var);
-        SvPVX(var) = 0;
-        SvCUR_set(var, 0);
-        SvLEN_set(var, 0);
-        SvOK_off(var);
+        mmap_reset_sv(var);
         ST(0) = &PL_sv_yes;
 
 void
@@ -399,10 +401,5 @@ DESTROY(var)
                 }
             }
         }
-        SvREADONLY_off(var);
-        SvPVX(var) = 0;
-        SvCUR_set(var, 0);
-        SvLEN_set(var, 0);
-        SvOK_off(var);
-        /* printf("destroy ran fine, thanks\n"); */
+        mmap_reset_sv(var);
         ST(0) = &PL_sv_yes;
