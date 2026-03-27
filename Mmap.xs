@@ -87,7 +87,7 @@ constant(const char *name, int arg)
 #endif
 	if (strEQ(name, "MAP_POPULATE"))
 #ifdef MAP_POPULATE
-	return MAP_POPULATE; 
+	return MAP_POPULATE;
 #else
 	goto not_there;
 #endif
@@ -106,6 +106,24 @@ constant(const char *name, int arg)
         if (strEQ(name, "MAP_HUGE_1GB"))
 #ifdef MAP_HUGE_1GB
             return MAP_HUGE_1GB;
+#else
+            goto not_there;
+#endif
+        if (strEQ(name, "MS_ASYNC"))
+#ifdef MS_ASYNC
+            return MS_ASYNC;
+#else
+            goto not_there;
+#endif
+        if (strEQ(name, "MS_SYNC"))
+#ifdef MS_SYNC
+            return MS_SYNC;
+#else
+            goto not_there;
+#endif
+        if (strEQ(name, "MS_INVALIDATE"))
+#ifdef MS_INVALIDATE
+            return MS_INVALIDATE;
 #else
             goto not_there;
 #endif
@@ -392,4 +410,43 @@ DESTROY(var)
             }
         }
         mmap_reset_sv(var);
+        ST(0) = &PL_sv_yes;
+
+SV *
+msync(var, flags = MS_SYNC)
+	SV *	var
+	int	flags
+    PROTOTYPE: $;$
+    CODE:
+	ST(0) = &PL_sv_undef;
+	if(!SvOK(var)) {
+            croak("msync: variable is not defined");
+            return;
+	}
+        if(SvTYPE(var) < SVt_PV || SvTYPE(var) > SVt_PVMG) {
+           croak("msync: variable is not a string, type is: %d", SvTYPE(var));
+            return;
+        }
+
+        {
+            MAGIC *mg = find_mmap_magic(var);
+            if (mg) {
+                mmap_info_t *info = (mmap_info_t *) mg->mg_ptr;
+                if (msync((MMAP_RETTYPE) info->base_addr, info->total_len, flags) == -1) {
+                    croak("msync failed! errno %d %s\n", errno, strerror(errno));
+                    return;
+                }
+            } else {
+                /* SvLEN > 0 means this is a regular Perl string, not mmap'd */
+                if (SvLEN(var) != 0) {
+                    errno = EINVAL;
+                    croak("msync: variable does not appear to be mmap'd");
+                    return;
+                }
+                if (msync((MMAP_RETTYPE) SvPVX(var), SvCUR(var), flags) == -1) {
+                    croak("msync failed! errno %d %s\n", errno, strerror(errno));
+                    return;
+                }
+            }
+        }
         ST(0) = &PL_sv_yes;
