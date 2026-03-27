@@ -140,8 +140,8 @@ manually.
 The Sys::Mmap module exports the following constants into your namespace:
 
     MAP_SHARED MAP_PRIVATE MAP_ANON MAP_ANONYMOUS MAP_FILE
-    MAP_NORESERVE MAP_POPULATE
-    MAP_HUGETLB MAP_HUGE_2MB MAP_HUGE_1GB 
+    MAP_LOCKED MAP_NORESERVE MAP_POPULATE
+    MAP_HUGETLB MAP_HUGE_2MB MAP_HUGE_1GB
     PROT_EXEC PROT_NONE PROT_READ PROT_WRITE
 
 Of the constants beginning with C<MAP_>, only C<MAP_SHARED> and C<MAP_PRIVATE>
@@ -151,26 +151,15 @@ are defined in POSIX.1b and only C<MAP_SHARED> is likely to be useful.
 
 =head1 BUGS
 
-Scott Walters doesn't know XS, and is just winging it. There must be a better
-way to tell Perl not to reallocate a variable in memory...
-
 The C<tie()> interface makes writing to a substring of the variable much less
 efficient.  One user cited his application running 10-20 times slower when C<<
 Sys::Mmap->new() >> is used than when C<mmap()> is called directly.
 
-Malcolm Beattie has not reviewed Scott's work and is not responsible for any
-bugs, errors, omissions, stylistic failings, importabilities, or design flaws
-in this version of the code.
-
 There should be a tied interface to C<hardwire()> as well.
 
-Scott Walter's spelling is awful.
-
 C<hardwire()> will segfault Perl if the C<mmap()> area it was referring to is
-C<munmap()>'d out from under it.
-
-C<munmap()> will segfault Perl if the variable was not successfully C<mmap()>'d
-previously, or if it has since been reallocated by Perl.
+C<munmap()>'d out from under it, because C<hardwire()> does not track the
+underlying mapping.
 
 =head1 AUTHOR
 
