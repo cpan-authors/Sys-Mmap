@@ -10,6 +10,7 @@ README
 t/comprehensive.t
 t/hardwire.t
 t/mmap.t
+t/msync.t
 t/munmap_errors.t
 t/offset.t
 xt/author/pod.t

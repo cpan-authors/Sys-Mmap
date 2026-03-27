@@ -126,6 +126,19 @@ call to C<mmap(VARIABLE, ...)> and makes VARIABLE become undefined.
 
 munmap returns 1 on success and undef on failure.
 
+=item msync(VARIABLE, FLAGS)
+
+Flushes changes made to the mmap'd region back to the filesystem.  This is
+useful when you have modified a C<MAP_SHARED> mapping and want to ensure the
+data is written to disk without unmapping the region.
+
+C<FLAGS> should be one of C<MS_ASYNC> (schedule a write but return immediately),
+C<MS_SYNC> (wait for the write to complete), or C<MS_INVALIDATE> (invalidate
+other mappings of the same file so they are updated).  C<FLAGS> defaults to
+C<MS_SYNC> if omitted.
+
+msync returns 1 on success and undef on failure.
+
 =item hardwire(VARIABLE, ADDRESS, LENGTH)
 
 Specifies the address in memory of a variable, possibly within a region you've
@@ -140,12 +153,16 @@ manually.
 The Sys::Mmap module exports the following constants into your namespace:
 
     MAP_SHARED MAP_PRIVATE MAP_ANON MAP_ANONYMOUS MAP_FILE
-    MAP_NORESERVE MAP_POPULATE
-    MAP_HUGETLB MAP_HUGE_2MB MAP_HUGE_1GB 
+    MAP_LOCKED MAP_NORESERVE MAP_POPULATE
+    MAP_HUGETLB MAP_HUGE_2MB MAP_HUGE_1GB
     PROT_EXEC PROT_NONE PROT_READ PROT_WRITE
+    MS_ASYNC MS_SYNC MS_INVALIDATE
 
 Of the constants beginning with C<MAP_>, only C<MAP_SHARED> and C<MAP_PRIVATE>
 are defined in POSIX.1b and only C<MAP_SHARED> is likely to be useful.
+
+The C<MS_*> constants are used with C<msync()> to control how changes are
+flushed to disk.
 
 =back
 
@@ -196,13 +213,14 @@ our $AUTOLOAD; # For sub AUTOLOAD
 require Exporter;
 our @ISA = qw(Exporter);
 
-our @EXPORT = qw(mmap munmap
+our @EXPORT = qw(mmap munmap msync
 	     MAP_ANON MAP_ANONYMOUS MAP_FILE MAP_LOCKED MAP_PRIVATE MAP_SHARED MAP_NORESERVE
     MAP_POPULATE
     MAP_HUGETLB
     MAP_HUGE_2MB
     MAP_HUGE_1GB
-	     PROT_EXEC PROT_NONE PROT_READ PROT_WRITE);
+	     PROT_EXEC PROT_NONE PROT_READ PROT_WRITE
+    MS_ASYNC MS_SYNC MS_INVALIDATE);
 
 
 sub new {
