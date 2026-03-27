@@ -37,7 +37,7 @@ not_here(const char *s)
     return -1;
 }
 
-static double
+static IV
 constant(const char *name, int arg)
 {
     errno = 0;
@@ -230,7 +230,7 @@ static MAGIC *find_mmap_magic(SV *sv) {
 MODULE = Sys::Mmap		PACKAGE = Sys::Mmap
 
 
-double
+IV
 constant(name,arg)
 	char *		name
 	int		arg
