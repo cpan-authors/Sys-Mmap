@@ -332,37 +332,31 @@ munmap(var)
     PROTOTYPE: $
     CODE:
 	ST(0) = &PL_sv_undef;
-        /* XXX refrain from dumping core if this var wasnt previously mmap'd */
-	if(!SvOK(var)) { /* Detect if variable is undef */
+	if(!SvOK(var))
             croak("undef variable not unmappable");
-            return;
-	}
-        if(SvTYPE(var) < SVt_PV || SvTYPE(var) > SVt_PVMG) {
-           croak("variable is not a string, type is: %d", SvTYPE(var));
-            return;
-        }
 
+        /* Check for mmap magic first — this is the definitive test for
+         * whether the SV was mmap'd, regardless of its current SvTYPE.
+         * Only fall back to type-based heuristics for legacy/hardwire'd SVs. */
         {
             MAGIC *mg = find_mmap_magic(var);
             if (mg) {
                 mmap_info_t *info = (mmap_info_t *) mg->mg_ptr;
-                if (munmap((MMAP_RETTYPE) info->base_addr, info->total_len) == -1) {
+                if (munmap((MMAP_RETTYPE) info->base_addr, info->total_len) == -1)
                     croak("munmap failed! errno %d %s\n", errno, strerror(errno));
-                    return;
-                }
                 info->base_addr = NULL;  /* prevent double munmap in magic free */
             } else {
                 /* fallback for hardwire'd or legacy variables without magic */
+                if (SvTYPE(var) < SVt_PV) {
+                    croak("variable is not a string, type is: %d", SvTYPE(var));
+                }
                 /* SvLEN > 0 means this is a regular Perl string, not mmap'd */
                 if (SvLEN(var) != 0) {
                     errno = EINVAL;
                     croak("munmap failed! errno %d %s\n", errno, strerror(errno));
-                    return;
                 }
-                if (munmap((MMAP_RETTYPE) SvPVX(var), SvCUR(var)) == -1) {
+                if (munmap((MMAP_RETTYPE) SvPVX(var), SvCUR(var)) == -1)
                     croak("munmap failed! errno %d %s\n", errno, strerror(errno));
-                    return;
-                }
             }
         }
         mmap_reset_sv(var);
@@ -385,20 +379,16 @@ DESTROY(var)
             if (mg) {
                 mmap_info_t *info = (mmap_info_t *) mg->mg_ptr;
                 if (info->base_addr) {
-                    if (munmap((MMAP_RETTYPE) info->base_addr, info->total_len) == -1) {
+                    if (munmap((MMAP_RETTYPE) info->base_addr, info->total_len) == -1)
                         croak("munmap failed! errno %d %s\n", errno, strerror(errno));
-                        return;
-                    }
                     info->base_addr = NULL;
                 }
             } else {
                 /* SvLEN > 0 means this is a regular Perl string, not mmap'd */
                 if (SvLEN(var) != 0)
                     return;
-                if (munmap((MMAP_RETTYPE) SvPVX(var), SvCUR(var)) == -1) {
+                if (munmap((MMAP_RETTYPE) SvPVX(var), SvCUR(var)) == -1)
                     croak("munmap failed! errno %d %s\n", errno, strerror(errno));
-                    return;
-                }
             }
         }
         mmap_reset_sv(var);
