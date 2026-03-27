@@ -6,6 +6,7 @@ Makefile.PL
 MANIFEST
 MANIFEST.SKIP
 Mmap.pm
+SECURITY.md
 Mmap.xs
 README
 t/comprehensive.t
