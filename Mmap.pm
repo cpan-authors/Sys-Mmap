@@ -184,6 +184,11 @@ Scott Walters updated for Perl 5.6.x, additions, 2002.
 
 Malcolm Beattie, 21 June 1996.
 
+=head1 LICENSE
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.  See L<perlartistic> and L<perlgpl>.
+
 =cut
 
 use strict;
