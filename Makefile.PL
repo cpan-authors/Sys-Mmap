@@ -45,4 +45,12 @@ WriteMakefile(
             directory => ['t', 'xt'],
         },
     },
+    META_ADD => {
+        provides => {
+            'Sys::Mmap' => {
+                file    => 'Mmap.pm',
+                version => '0.21',
+            },
+        },
+    },
 );
