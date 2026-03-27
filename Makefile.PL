@@ -17,11 +17,14 @@ if ($ExtUtils::MakeMaker::VERSION < 6.64) {
     %prereq_pm = (%prereq_pm, %test_requires);
 }
 
+my $module_file = 'Mmap.pm';
+my $module_version = MM->parse_version($module_file);
+
 WriteMakefile(
     NAME             => 'Sys::Mmap',
     AUTHOR           => 'Scott Walters <swalters@cpan.org>',
-    VERSION_FROM     => 'Mmap.pm',
-    ABSTRACT_FROM    => 'Mmap.pm',
+    VERSION_FROM     => $module_file,
+    ABSTRACT_FROM    => $module_file,
     PL_FILES         => {},
     MIN_PERL_VERSION => '5.008',
     LICENSE          => 'perl',
@@ -48,8 +51,8 @@ WriteMakefile(
     META_ADD => {
         provides => {
             'Sys::Mmap' => {
-                file    => 'Mmap.pm',
-                version => '0.21',
+                file    => $module_file,
+                version => $module_version,
             },
         },
     },
