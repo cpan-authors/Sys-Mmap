@@ -450,3 +450,40 @@ msync(var, flags = MS_SYNC)
             }
         }
         ST(0) = &PL_sv_yes;
+
+SV *
+mprotect(var, prot)
+	SV *	var
+	int	prot
+    PROTOTYPE: $$
+    CODE:
+	ST(0) = &PL_sv_undef;
+	if(!SvOK(var))
+            croak("mprotect: variable is not defined");
+
+        {
+            MAGIC *mg = find_mmap_magic(var);
+            if (mg) {
+                mmap_info_t *info = (mmap_info_t *) mg->mg_ptr;
+                if (mprotect(info->base_addr, info->total_len, prot) == -1)
+                    croak("mprotect failed! errno %d %s\n", errno, strerror(errno));
+            } else {
+                if (SvTYPE(var) < SVt_PV) {
+                    croak("mprotect: variable is not a string, type is: %d", SvTYPE(var));
+                }
+                if (SvLEN(var) != 0) {
+                    errno = EINVAL;
+                    croak("mprotect: variable does not appear to be mmap'd");
+                }
+                if (mprotect((void *) SvPVX(var), SvCUR(var), prot) == -1)
+                    croak("mprotect failed! errno %d %s\n", errno, strerror(errno));
+            }
+        }
+
+        /* Update Perl's SvREADONLY to match the new protection */
+        if (prot & PROT_WRITE)
+            SvREADONLY_off(var);
+        else
+            SvREADONLY_on(var);
+
+        ST(0) = &PL_sv_yes;

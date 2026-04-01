@@ -13,6 +13,7 @@ t/comprehensive.t
 t/constants.t
 t/hardwire.t
 t/mmap.t
+t/mprotect.t
 t/msync.t
 t/munmap_errors.t
 t/offset.t
