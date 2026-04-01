@@ -12,11 +12,36 @@ Bug Fixes:
 * Resolve tied interface DESTROY munmap failures. DESTROY receives a
   blessed reference, not the mmap'd SV itself. Without dereferencing,
   the magic lookup failed and tried to munmap a garbage pointer. PR #16
+* Return mmap() address as UV instead of NV to prevent precision loss
+  on 64-bit systems. Addresses above 2^53 were silently truncated when
+  returned as a double. PR #18
+* Return XS constants (MAP_*, PROT_*, MS_*) as IV instead of NV to
+  ensure integer semantics and avoid "not an integer" warnings in
+  bitwise operations. PR #19
+* Harden munmap() SvTYPE validation. The upper-bound check rejected
+  valid SV types on Perl 5.12+ where SVt_PVLV > SVt_PVMG. Now checks
+  magic first and only falls back to type heuristics for legacy SVs.
+  PR #22
+
+New Features:
+* Add msync() to flush mmap'd changes to disk. Supports MS_SYNC,
+  MS_ASYNC, and MS_INVALIDATE flags, with MS_SYNC as the default.
+  Uses magic metadata for correct base address/length. PR #21
 
 Improvements:
 * Document len=0 with offset behavior and caveats in POD. Clarify that
   len=0 with offset infers remaining file size, document the
   offset-beyond-EOF error, and add caveat about page alignment. PR #15
+* Extract mmap_reset_sv() helper to deduplicate SV cleanup in munmap()
+  and DESTROY(). Modernize old K&R function declarations to ANSI C.
+  PR #20
+
+Packaging:
+* Add 'provides' metadata to META via Makefile.PL for CPAN indexing.
+  PR #24
+* Add LICENSE section to POD for CPANTS Kwalitee compliance. PR #23
+* Add SECURITY.md with vulnerability reporting policy. PR #25
+* Add CONTRIBUTING.md with contribution guidelines. PR #26
 
 Maintenance:
 * Modernize CI: consolidate separate linux.yml and macos.yml into a
