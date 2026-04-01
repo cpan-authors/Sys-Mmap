@@ -139,6 +139,25 @@ C<MS_SYNC> if omitted.
 
 msync returns 1 on success and undef on failure.
 
+=item mprotect(VARIABLE, PROTECTION)
+
+Changes the memory protection of the mmap'd region associated with
+C<VARIABLE>.  C<PROTECTION> should be some ORed combination of C<PROT_READ>,
+C<PROT_WRITE>, C<PROT_EXEC>, or C<PROT_NONE>.
+
+This is useful when you want to map a region read-write, fill it with data,
+then mark it read-only to prevent accidental modifications:
+
+    mmap($data, $len, PROT_READ|PROT_WRITE, MAP_SHARED, FH);
+    substr($data, 0, length($content)) = $content;
+    mprotect($data, PROT_READ);  # now read-only
+
+Perl's internal read-only flag on the variable is automatically updated to
+match the new protection: if C<PROT_WRITE> is included, the variable becomes
+writable; otherwise it becomes read-only.
+
+mprotect returns 1 on success and undef on failure.
+
 =item hardwire(VARIABLE, ADDRESS, LENGTH)
 
 Specifies the address in memory of a variable, possibly within a region you've
@@ -207,7 +226,7 @@ our $AUTOLOAD; # For sub AUTOLOAD
 require Exporter;
 our @ISA = qw(Exporter);
 
-our @EXPORT = qw(mmap munmap msync
+our @EXPORT = qw(mmap munmap msync mprotect
     MAP_ANON MAP_ANONYMOUS MAP_FILE MAP_LOCKED MAP_PRIVATE MAP_SHARED
     MAP_NORESERVE MAP_POPULATE
     MAP_HUGETLB MAP_HUGE_2MB MAP_HUGE_1GB
