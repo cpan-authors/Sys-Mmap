@@ -16,4 +16,5 @@ t/mmap.t
 t/msync.t
 t/munmap_errors.t
 t/offset.t
+t/remmap.t
 xt/author/pod.t
