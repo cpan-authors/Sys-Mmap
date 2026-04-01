@@ -313,8 +313,24 @@ mmap(var, len, prot, flags, fh = 0, off_string)
 	if (addr == MAP_FAILED) {
             croak("mmap: mmap call failed: errno: %d errmsg: %s ", errno, strerror(errno));
         }
-#if PERL_VERSION >= 20
+        /* If this SV was already mmap'd, clean up the old mapping to avoid
+         * leaking it.  The old magic stays on the SV (harmless, base_addr is
+         * NULL so the free handler becomes a no-op) — a new magic is appended
+         * below for the new mapping. */
+        {
+            MAGIC *old_mg = find_mmap_magic(var);
+            if (old_mg) {
+                mmap_info_t *old_info = (mmap_info_t *) old_mg->mg_ptr;
+                if (old_info && old_info->base_addr) {
+                    munmap((MMAP_RETTYPE) old_info->base_addr, old_info->total_len);
+                    old_info->base_addr = NULL;
+                }
+            }
+        }
 
+        /* Clear read-only flag in case the previous mapping was PROT_READ */
+        SvREADONLY_off(var);
+#if PERL_VERSION >= 20
         if (SvIsCOW(var)) {
             sv_force_normal_flags(var, 0);
         }
