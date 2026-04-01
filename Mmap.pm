@@ -222,11 +222,7 @@ sub new {
     return undef;
   }
 
-  my $type = $_[0];
-  my $leng = $_[2];
-
   tie $_[1], $_[0], @_[2 .. scalar(@_)-1 ];
-  # tie $_[1], $type, $leng;
 
 }
 
@@ -245,8 +241,7 @@ sub TIESCALAR {
   my $leng = shift;
   my $file = shift;
 
-  my $flags = constant('MAP_INHERIT',0)|
-              constant('MAP_SHARED',0);
+  my $flags = constant('MAP_SHARED',0);
 
   if($file) {
     open $fh, '+>>', $file or do {

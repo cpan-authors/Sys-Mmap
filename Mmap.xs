@@ -238,7 +238,7 @@ constant(name,arg)
 SV *
 hardwire(var, addr, len)
         SV *            var
-	IV	addr
+	UV	addr
 	size_t		len
     PROTOTYPE: $$$
     CODE:
