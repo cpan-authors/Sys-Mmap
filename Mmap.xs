@@ -254,7 +254,7 @@ hardwire(var, addr, len)
 
 
 SV *
-mmap(var, len, prot, flags, fh = 0, off_string)
+mmap(var, len, prot, flags, fh = 0, off_string = 0)
 	SV *		var
 	size_t		len
 	int		prot
@@ -268,7 +268,7 @@ mmap(var, len, prot, flags, fh = 0, off_string)
     PROTOTYPE: $$$$*;$
     CODE:
 
-    if(!SvTRUE(off_string)) {
+    if(!off_string || !SvTRUE(off_string)) {
         off = 0;
     }
     else {
