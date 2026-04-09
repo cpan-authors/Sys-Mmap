@@ -82,9 +82,10 @@ C<VARIABLE> will be tied into the "Sys::Mmap" package, and C<mmap()> will be
 called for you.
 
 Assigning to C<VARIABLE> will overwrite the beginning of the file for a length
-of the value being assigned in. The rest of the file or memory region after
-that point will be left intact.  You may use C<substr()> to assign at a given
-position:
+of the value being assigned in.  If the assigned value is longer than the
+mapped region, it is silently truncated to fit.  The rest of the file or memory
+region after the written portion will be left intact.  You may use C<substr()>
+to assign at a given position:
 
     substr(VARIABLE, POSITION, LENGTH) = NEWVALUE
 
@@ -245,8 +246,7 @@ sub TIESCALAR {
   my $leng = shift;
   my $file = shift;
 
-  my $flags = constant('MAP_INHERIT',0)|
-              constant('MAP_SHARED',0);
+  my $flags = constant('MAP_SHARED',0);
 
   if($file) {
     open $fh, '+>>', $file or do {
@@ -282,6 +282,10 @@ sub TIESCALAR {
 sub STORE {
   my $me = shift;
   my $newval = shift;
+  my $maplen = length($$me);
+  if (length($newval) > $maplen) {
+    $newval = substr($newval, 0, $maplen);
+  }
   substr($$me, 0, length($newval), $newval);
   $$me;
 }
