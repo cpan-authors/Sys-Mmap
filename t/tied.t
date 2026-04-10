@@ -5,7 +5,7 @@ use warnings;
 
 use Test::More;
 use Sys::Mmap;
-use Fcntl qw(O_RDONLY);
+use Fcntl qw(O_RDONLY O_WRONLY O_CREAT O_TRUNC);
 
 my $temp_file = "tied.tmp";
 
@@ -71,7 +71,7 @@ my $temp_file = "tied.tmp";
 {
     # Create a file with known content
     my $content = "Hello, mmap tied!" . ("\0" x (4096 - 17));
-    sysopen(my $fh_w, $temp_file, Fcntl::O_WRONLY|Fcntl::O_CREAT|Fcntl::O_TRUNC) or die "$temp_file: $!\n";
+    sysopen(my $fh_w, $temp_file, O_WRONLY|O_CREAT|O_TRUNC) or die "$temp_file: $!\n";
     print $fh_w $content;
     close $fh_w;
 
@@ -96,7 +96,7 @@ my $temp_file = "tied.tmp";
 
 {
     # Create a 2048-byte file
-    sysopen(my $fh_w, $temp_file, Fcntl::O_WRONLY|Fcntl::O_CREAT|Fcntl::O_TRUNC) or die "$temp_file: $!\n";
+    sysopen(my $fh_w, $temp_file, O_WRONLY|O_CREAT|O_TRUNC) or die "$temp_file: $!\n";
     print $fh_w "Q" x 2048;
     close $fh_w;
 
