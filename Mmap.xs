@@ -30,13 +30,6 @@ extern "C" {
 #define MAP_FAILED ((caddr_t)-1)
 #endif
 
-static int
-not_here(const char *s)
-{
-    croak("%s not implemented on this architecture", s);
-    return -1;
-}
-
 static IV
 constant(const char *name, int arg)
 {
@@ -235,25 +228,24 @@ constant(name,arg)
 	char *		name
 	int		arg
 
-SV *
+void
 hardwire(var, addr, len)
         SV *            var
 	IV	addr
 	size_t		len
     PROTOTYPE: $$$
-    CODE:
-	ST(0) = &PL_sv_undef;
+    PPCODE:
 	SvUPGRADE(var, SVt_PV);
 	SvPVX(var) = (char *) addr;
 	SvCUR_set(var, len);
 	SvLEN_set(var, 0);
 	SvPOK_only(var);
-        /*printf("ok, that var is now stuck at addr %lx\n", addr);*/
         ST(0) = &PL_sv_yes;
+        XSRETURN(1);
 
 
 
-SV *
+void
 mmap(var, len, prot, flags, fh = 0, off_string)
 	SV *		var
 	size_t		len
@@ -266,7 +258,7 @@ mmap(var, len, prot, flags, fh = 0, off_string)
 	off_t		slop = NO_INIT
     off_t off = NO_INIT
     PROTOTYPE: $$$$*;$
-    CODE:
+    PPCODE:
 
     if(!SvTRUE(off_string)) {
         off = 0;
@@ -279,7 +271,6 @@ mmap(var, len, prot, flags, fh = 0, off_string)
         croak("mmap: Cannot operate on a negative offset (%s) ", SvPVbyte_nolen(off_string));
     }
     
-	ST(0) = &PL_sv_undef;
         if(flags&MAP_ANON) {
           fd = -1;
           if (!len)  {
@@ -343,13 +334,13 @@ mmap(var, len, prot, flags, fh = 0, off_string)
         }
 
         ST(0) = sv_2mortal(newSVuv(PTR2UV(addr)));
+        XSRETURN(1);
 
-SV *
+void
 munmap(var)
 	SV *	var
     PROTOTYPE: $
-    CODE:
-	ST(0) = &PL_sv_undef;
+    PPCODE:
 	if(!SvOK(var))
             croak("undef variable not unmappable");
 
@@ -379,6 +370,7 @@ munmap(var)
         }
         mmap_reset_sv(var);
         ST(0) = &PL_sv_yes;
+        XSRETURN(1);
 
 void
 DESTROY(var)
@@ -412,41 +404,32 @@ DESTROY(var)
         mmap_reset_sv(var);
         ST(0) = &PL_sv_yes;
 
-SV *
+void
 msync(var, flags = MS_SYNC)
 	SV *	var
 	int	flags
     PROTOTYPE: $;$
-    CODE:
-	ST(0) = &PL_sv_undef;
-	if(!SvOK(var)) {
+    PPCODE:
+	if(!SvOK(var))
             croak("msync: variable is not defined");
-            return;
-	}
-        if(SvTYPE(var) < SVt_PV || SvTYPE(var) > SVt_PVMG) {
+        if(SvTYPE(var) < SVt_PV || SvTYPE(var) > SVt_PVMG)
            croak("msync: variable is not a string, type is: %d", SvTYPE(var));
-            return;
-        }
 
         {
             MAGIC *mg = find_mmap_magic(var);
             if (mg) {
                 mmap_info_t *info = (mmap_info_t *) mg->mg_ptr;
-                if (msync((MMAP_RETTYPE) info->base_addr, info->total_len, flags) == -1) {
+                if (msync((MMAP_RETTYPE) info->base_addr, info->total_len, flags) == -1)
                     croak("msync failed! errno %d %s\n", errno, strerror(errno));
-                    return;
-                }
             } else {
                 /* SvLEN > 0 means this is a regular Perl string, not mmap'd */
                 if (SvLEN(var) != 0) {
                     errno = EINVAL;
                     croak("msync: variable does not appear to be mmap'd");
-                    return;
                 }
-                if (msync((MMAP_RETTYPE) SvPVX(var), SvCUR(var), flags) == -1) {
+                if (msync((MMAP_RETTYPE) SvPVX(var), SvCUR(var), flags) == -1)
                     croak("msync failed! errno %d %s\n", errno, strerror(errno));
-                    return;
-                }
             }
         }
         ST(0) = &PL_sv_yes;
+        XSRETURN(1);

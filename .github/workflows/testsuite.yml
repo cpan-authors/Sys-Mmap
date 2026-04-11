@@ -87,6 +87,19 @@ jobs:
       - run: make
       - run: make test
 
+  compiler-warnings:
+    name: "Compiler warnings"
+    needs: [ubuntu]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build with strict warnings
+        run: |
+          perl Makefile.PL OPTIMIZE='-Wall -Wextra -Wno-unused-parameter -Werror -O2 -g'
+          make
+      - run: make test
+
   macOS:
     needs: [ubuntu, linux]
     runs-on: macos-latest
