@@ -11,6 +11,7 @@ Mmap.xs
 README
 t/comprehensive.t
 t/constants.t
+t/fork.t
 t/hardwire.t
 t/mmap.t
 t/msync.t
