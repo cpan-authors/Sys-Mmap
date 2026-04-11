@@ -243,12 +243,24 @@ hardwire(var, addr, len)
     PROTOTYPE: $$$
     CODE:
 	ST(0) = &PL_sv_undef;
+#if PERL_VERSION >= 20
+        if (SvIsCOW(var)) {
+            sv_force_normal_flags(var, SV_COW_DROP_PV);
+        }
+#endif
+        /* Free any existing string buffer to prevent memory leak */
+        if (SvTYPE(var) >= SVt_PV && SvLEN(var) > 0) {
+            if (SvOOK(var))
+                sv_backoff(var);
+            Safefree(SvPVX(var));
+            SvPVX(var) = NULL;
+            SvLEN_set(var, 0);
+        }
 	SvUPGRADE(var, SVt_PV);
 	SvPVX(var) = (char *) addr;
 	SvCUR_set(var, len);
 	SvLEN_set(var, 0);
 	SvPOK_only(var);
-        /*printf("ok, that var is now stuck at addr %lx\n", addr);*/
         ST(0) = &PL_sv_yes;
 
 
@@ -314,11 +326,19 @@ mmap(var, len, prot, flags, fh = 0, off_string)
             croak("mmap: mmap call failed: errno: %d errmsg: %s ", errno, strerror(errno));
         }
 #if PERL_VERSION >= 20
-
         if (SvIsCOW(var)) {
-            sv_force_normal_flags(var, 0);
+            sv_force_normal_flags(var, SV_COW_DROP_PV);
         }
 #endif
+        /* Free any existing string buffer to prevent memory leak when
+           mmap'ing into a variable that already holds a string value */
+        if (SvTYPE(var) >= SVt_PV && SvLEN(var) > 0) {
+            if (SvOOK(var))
+                sv_backoff(var);
+            Safefree(SvPVX(var));
+            SvPVX(var) = NULL;
+            SvLEN_set(var, 0);
+        }
 
 	SvUPGRADE(var, SVt_PV);
 	if (!(prot & PROT_WRITE))
