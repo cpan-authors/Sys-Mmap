@@ -30,6 +30,23 @@ extern "C" {
 #define MAP_FAILED ((caddr_t)-1)
 #endif
 
+/* Ensure MAP_ANON is always defined so the mmap() CODE block compiles
+   on platforms that only provide MAP_ANONYMOUS (POSIX) or neither. */
+#ifndef MAP_ANON
+#ifdef MAP_ANONYMOUS
+#define MAP_ANON MAP_ANONYMOUS
+#else
+#define MAP_ANON 0
+#endif
+#endif
+
+/* Forward-compatible Perl version check (available natively since 5.33.1) */
+#ifndef PERL_VERSION_GE
+#define PERL_VERSION_GE(r,v,s) \
+    (PERL_REVISION > (r) || (PERL_REVISION == (r) && \
+    (PERL_VERSION > (v) || (PERL_VERSION == (v) && PERL_SUBVERSION >= (s)))))
+#endif
+
 static int
 not_here(const char *s)
 {
@@ -313,7 +330,7 @@ mmap(var, len, prot, flags, fh = 0, off_string)
 	if (addr == MAP_FAILED) {
             croak("mmap: mmap call failed: errno: %d errmsg: %s ", errno, strerror(errno));
         }
-#if PERL_VERSION >= 20
+#if PERL_VERSION_GE(5,20,0)
 
         if (SvIsCOW(var)) {
             sv_force_normal_flags(var, 0);
