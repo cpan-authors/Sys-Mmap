@@ -11,9 +11,9 @@ Sys::Mmap - uses mmap to map in a file as a Perl variable
     Sys::Mmap->new( my $str, 8192, 'structtest2.pl' ) or die $!;
     Sys::Mmap->new( $var, 8192 ) or die $!;
 
-    mmap( $foo, 0, PROT_READ, MAP_SHARED, FILEHANDLE ) or die "mmap: $!";
+    mmap( $foo, 0, PROT_READ, MAP_SHARED, FILEHANDLE );
     @tags = $foo =~ /<(.*?)>/g;
-    munmap($foo) or die "munmap: $!";
+    munmap($foo);
 
     mmap( $bar, 8192, PROT_READ | PROT_WRITE, MAP_SHARED, FILEHANDLE );
     substr( $bar, 1024, 11 ) = "Hello world";
@@ -116,15 +116,17 @@ C<MAP_FILE> as a non-zero constant (necessarily non-POSIX) then you should also
 include that in C<FLAGS>.  POSIX.1b does not specify C<MAP_FILE> as a C<FLAG>
 argument and most if not all versions of Unix have C<MAP_FILE> as zero.
 
-mmap returns C<undef> on failure, and the address in memory where the variable
-was mapped to on success.
+mmap returns the address in memory where the variable was mapped to on
+success.  On failure (bad arguments, system call error), it throws an
+exception via C<croak()>.
 
 =item munmap(VARIABLE)
 
 Unmaps the part of your address space which was previously mapped in with a
 call to C<mmap(VARIABLE, ...)> and makes VARIABLE become undefined.
 
-munmap returns 1 on success and undef on failure.
+munmap returns 1 on success.  On failure, it throws an exception via
+C<croak()>.
 
 =item msync(VARIABLE, FLAGS)
 
@@ -137,7 +139,8 @@ C<MS_SYNC> (wait for the write to complete), or C<MS_INVALIDATE> (invalidate
 other mappings of the same file so they are updated).  C<FLAGS> defaults to
 C<MS_SYNC> if omitted.
 
-msync returns 1 on success and undef on failure.
+msync returns 1 on success.  On failure, it throws an exception via
+C<croak()>.
 
 =item hardwire(VARIABLE, ADDRESS, LENGTH)
 
