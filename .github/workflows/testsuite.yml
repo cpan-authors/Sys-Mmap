@@ -104,7 +104,9 @@ jobs:
       - name: Install coverage dependencies
         uses: perl-actions/install-with-cpm@v2
         with:
-          install: "Devel::Cover Devel::Cover::Report::Codecov JSON::MaybeXS"
+          install: |
+            Devel::Cover
+            JSON::MaybeXS
       - name: Build with coverage flags
         run: |
           perl Makefile.PL OPTIMIZE="-g -O0 --coverage -fprofile-arcs -ftest-coverage" \
