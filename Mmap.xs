@@ -127,6 +127,42 @@ constant(const char *name, int arg)
 #else
             goto not_there;
 #endif
+        if (strEQ(name, "MADV_NORMAL"))
+#ifdef MADV_NORMAL
+            return MADV_NORMAL;
+#else
+            goto not_there;
+#endif
+        if (strEQ(name, "MADV_RANDOM"))
+#ifdef MADV_RANDOM
+            return MADV_RANDOM;
+#else
+            goto not_there;
+#endif
+        if (strEQ(name, "MADV_SEQUENTIAL"))
+#ifdef MADV_SEQUENTIAL
+            return MADV_SEQUENTIAL;
+#else
+            goto not_there;
+#endif
+        if (strEQ(name, "MADV_WILLNEED"))
+#ifdef MADV_WILLNEED
+            return MADV_WILLNEED;
+#else
+            goto not_there;
+#endif
+        if (strEQ(name, "MADV_DONTNEED"))
+#ifdef MADV_DONTNEED
+            return MADV_DONTNEED;
+#else
+            goto not_there;
+#endif
+        if (strEQ(name, "MADV_FREE"))
+#ifdef MADV_FREE
+            return MADV_FREE;
+#else
+            goto not_there;
+#endif
 	break;
     case 'P':
 	if (strEQ(name, "PROT_EXEC"))
@@ -445,6 +481,45 @@ msync(var, flags = MS_SYNC)
                 }
                 if (msync((MMAP_RETTYPE) SvPVX(var), SvCUR(var), flags) == -1) {
                     croak("msync failed! errno %d %s\n", errno, strerror(errno));
+                    return;
+                }
+            }
+        }
+        ST(0) = &PL_sv_yes;
+
+SV *
+madvise(var, advice = MADV_NORMAL)
+	SV *	var
+	int	advice
+    PROTOTYPE: $;$
+    CODE:
+	ST(0) = &PL_sv_undef;
+	if(!SvOK(var)) {
+            croak("madvise: variable is not defined");
+            return;
+	}
+        if(SvTYPE(var) < SVt_PV || SvTYPE(var) > SVt_PVMG) {
+           croak("madvise: variable is not a string, type is: %d", SvTYPE(var));
+            return;
+        }
+
+        {
+            MAGIC *mg = find_mmap_magic(var);
+            if (mg) {
+                mmap_info_t *info = (mmap_info_t *) mg->mg_ptr;
+                if (madvise((MMAP_RETTYPE) info->base_addr, info->total_len, advice) == -1) {
+                    croak("madvise failed! errno %d %s\n", errno, strerror(errno));
+                    return;
+                }
+            } else {
+                /* SvLEN > 0 means this is a regular Perl string, not mmap'd */
+                if (SvLEN(var) != 0) {
+                    errno = EINVAL;
+                    croak("madvise: variable does not appear to be mmap'd");
+                    return;
+                }
+                if (madvise((MMAP_RETTYPE) SvPVX(var), SvCUR(var), advice) == -1) {
+                    croak("madvise failed! errno %d %s\n", errno, strerror(errno));
                     return;
                 }
             }

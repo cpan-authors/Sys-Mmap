@@ -12,6 +12,7 @@ README
 t/comprehensive.t
 t/constants.t
 t/hardwire.t
+t/madvise.t
 t/mmap.t
 t/msync.t
 t/munmap_errors.t

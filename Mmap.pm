@@ -139,6 +139,47 @@ C<MS_SYNC> if omitted.
 
 msync returns 1 on success and undef on failure.
 
+=item madvise(VARIABLE, ADVICE)
+
+Advises the kernel about the expected access pattern for the mmap'd region,
+allowing it to optimize readahead and caching behavior.
+
+C<ADVICE> should be one of:
+
+=over 4
+
+=item C<MADV_NORMAL>
+
+No special treatment (the default).
+
+=item C<MADV_RANDOM>
+
+Expect random page references; disables readahead.
+
+=item C<MADV_SEQUENTIAL>
+
+Expect sequential page references; aggressive readahead.
+
+=item C<MADV_WILLNEED>
+
+Expect access in the near future; initiate readahead.
+
+=item C<MADV_DONTNEED>
+
+Do not expect access in the near future; pages may be freed by the kernel.
+
+=item C<MADV_FREE>
+
+Pages may be freed by the kernel when memory pressure occurs (Linux 4.5+,
+FreeBSD).  Unlike C<MADV_DONTNEED>, pages are kept until actually needed
+elsewhere.
+
+=back
+
+C<ADVICE> defaults to C<MADV_NORMAL> if omitted.
+
+madvise returns 1 on success and undef on failure.
+
 =item hardwire(VARIABLE, ADDRESS, LENGTH)
 
 Specifies the address in memory of a variable, possibly within a region you've
@@ -157,12 +198,17 @@ The Sys::Mmap module exports the following constants into your namespace:
     MAP_HUGETLB MAP_HUGE_2MB MAP_HUGE_1GB
     PROT_EXEC PROT_NONE PROT_READ PROT_WRITE
     MS_ASYNC MS_SYNC MS_INVALIDATE
+    MADV_NORMAL MADV_RANDOM MADV_SEQUENTIAL MADV_WILLNEED MADV_DONTNEED
+    MADV_FREE
 
 Of the constants beginning with C<MAP_>, only C<MAP_SHARED> and C<MAP_PRIVATE>
 are defined in POSIX.1b and only C<MAP_SHARED> is likely to be useful.
 
 The C<MS_*> constants are used with C<msync()> to control how changes are
 flushed to disk.
+
+The C<MADV_*> constants are used with C<madvise()> to advise the kernel about
+expected access patterns.
 
 =back
 
@@ -207,12 +253,14 @@ our $AUTOLOAD; # For sub AUTOLOAD
 require Exporter;
 our @ISA = qw(Exporter);
 
-our @EXPORT = qw(mmap munmap msync
+our @EXPORT = qw(mmap munmap msync madvise
     MAP_ANON MAP_ANONYMOUS MAP_FILE MAP_LOCKED MAP_PRIVATE MAP_SHARED
     MAP_NORESERVE MAP_POPULATE
     MAP_HUGETLB MAP_HUGE_2MB MAP_HUGE_1GB
     PROT_EXEC PROT_NONE PROT_READ PROT_WRITE
-    MS_ASYNC MS_SYNC MS_INVALIDATE);
+    MS_ASYNC MS_SYNC MS_INVALIDATE
+    MADV_NORMAL MADV_RANDOM MADV_SEQUENTIAL MADV_WILLNEED MADV_DONTNEED
+    MADV_FREE);
 
 
 sub new {
