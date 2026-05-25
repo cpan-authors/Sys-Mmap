@@ -450,3 +450,61 @@ msync(var, flags = MS_SYNC)
             }
         }
         ST(0) = &PL_sv_yes;
+
+SV *
+mlock(var)
+	SV *	var
+    PROTOTYPE: $
+    CODE:
+	ST(0) = &PL_sv_undef;
+	if(!SvOK(var))
+            croak("mlock: variable is not defined");
+        if(SvTYPE(var) < SVt_PV || SvTYPE(var) > SVt_PVMG) {
+           croak("mlock: variable is not a string, type is: %d", SvTYPE(var));
+        }
+
+        {
+            MAGIC *mg = find_mmap_magic(var);
+            if (mg) {
+                mmap_info_t *info = (mmap_info_t *) mg->mg_ptr;
+                if (mlock(info->base_addr, info->total_len) == -1)
+                    croak("mlock failed! errno %d %s\n", errno, strerror(errno));
+            } else {
+                if (SvLEN(var) != 0) {
+                    errno = EINVAL;
+                    croak("mlock: variable does not appear to be mmap'd");
+                }
+                if (mlock((const void *) SvPVX(var), SvCUR(var)) == -1)
+                    croak("mlock failed! errno %d %s\n", errno, strerror(errno));
+            }
+        }
+        ST(0) = &PL_sv_yes;
+
+SV *
+munlock(var)
+	SV *	var
+    PROTOTYPE: $
+    CODE:
+	ST(0) = &PL_sv_undef;
+	if(!SvOK(var))
+            croak("munlock: variable is not defined");
+        if(SvTYPE(var) < SVt_PV || SvTYPE(var) > SVt_PVMG) {
+           croak("munlock: variable is not a string, type is: %d", SvTYPE(var));
+        }
+
+        {
+            MAGIC *mg = find_mmap_magic(var);
+            if (mg) {
+                mmap_info_t *info = (mmap_info_t *) mg->mg_ptr;
+                if (munlock(info->base_addr, info->total_len) == -1)
+                    croak("munlock failed! errno %d %s\n", errno, strerror(errno));
+            } else {
+                if (SvLEN(var) != 0) {
+                    errno = EINVAL;
+                    croak("munlock: variable does not appear to be mmap'd");
+                }
+                if (munlock((const void *) SvPVX(var), SvCUR(var)) == -1)
+                    croak("munlock failed! errno %d %s\n", errno, strerror(errno));
+            }
+        }
+        ST(0) = &PL_sv_yes;
