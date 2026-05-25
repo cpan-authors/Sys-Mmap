@@ -139,6 +139,21 @@ C<MS_SYNC> if omitted.
 
 msync returns 1 on success and undef on failure.
 
+=item mlock(VARIABLE)
+
+Locks the mmap'd pages into physical memory, preventing them from being swapped
+to disk.  This is useful for security-sensitive data (e.g., encryption keys)
+that should never be written to swap space.
+
+mlock returns 1 on success.  On failure, it throws an exception (e.g., if the
+process exceeds its locked-memory limit, C<RLIMIT_MEMLOCK>).
+
+=item munlock(VARIABLE)
+
+Unlocks previously locked pages, allowing the kernel to swap them if needed.
+
+munlock returns 1 on success.
+
 =item hardwire(VARIABLE, ADDRESS, LENGTH)
 
 Specifies the address in memory of a variable, possibly within a region you've
@@ -207,7 +222,7 @@ our $AUTOLOAD; # For sub AUTOLOAD
 require Exporter;
 our @ISA = qw(Exporter);
 
-our @EXPORT = qw(mmap munmap msync
+our @EXPORT = qw(mmap munmap msync mlock munlock
     MAP_ANON MAP_ANONYMOUS MAP_FILE MAP_LOCKED MAP_PRIVATE MAP_SHARED
     MAP_NORESERVE MAP_POPULATE
     MAP_HUGETLB MAP_HUGE_2MB MAP_HUGE_1GB
