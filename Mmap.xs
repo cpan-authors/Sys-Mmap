@@ -397,20 +397,23 @@ DESTROY(var)
             if (mg) {
                 mmap_info_t *info = (mmap_info_t *) mg->mg_ptr;
                 if (info->base_addr) {
-                    if (munmap((MMAP_RETTYPE) info->base_addr, info->total_len) == -1)
-                        croak("munmap failed! errno %d %s\n", errno, strerror(errno));
-                    info->base_addr = NULL;
+                    void *addr = info->base_addr;
+                    size_t len = info->total_len;
+                    info->base_addr = NULL;  /* prevent double munmap in magic free */
+                    if (munmap((MMAP_RETTYPE) addr, len) == -1)
+                        warn("Sys::Mmap::DESTROY: munmap failed (errno %d: %s)",
+                             errno, strerror(errno));
                 }
             } else {
                 /* SvLEN > 0 means this is a regular Perl string, not mmap'd */
                 if (SvLEN(var) != 0)
                     return;
                 if (munmap((MMAP_RETTYPE) SvPVX(var), SvCUR(var)) == -1)
-                    croak("munmap failed! errno %d %s\n", errno, strerror(errno));
+                    warn("Sys::Mmap::DESTROY: munmap failed (errno %d: %s)",
+                         errno, strerror(errno));
             }
         }
         mmap_reset_sv(var);
-        ST(0) = &PL_sv_yes;
 
 SV *
 msync(var, flags = MS_SYNC)
