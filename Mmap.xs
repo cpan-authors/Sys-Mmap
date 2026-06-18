@@ -188,6 +188,16 @@ static int mmap_magic_free(pTHX_ SV *sv, MAGIC *mg) {
     return 0;
 }
 
+#ifdef USE_ITHREADS
+static int mmap_magic_dup(pTHX_ MAGIC *mg, CLONE_PARAMS *params) {
+    mmap_info_t *new_info;
+    PERL_UNUSED_VAR(params);
+    Newxz(new_info, 1, mmap_info_t);
+    mg->mg_ptr = (char *) new_info;
+    return 0;
+}
+#endif
+
 static MGVTBL mmap_magic_vtbl = {
     0,                /* get */
     0,                /* set */
@@ -195,7 +205,11 @@ static MGVTBL mmap_magic_vtbl = {
     0,                /* clear */
     mmap_magic_free,  /* free */
     0,                /* copy */
+#ifdef USE_ITHREADS
+    mmap_magic_dup,   /* dup */
+#else
     0,                /* dup */
+#endif
     0                 /* local */
 };
 
@@ -340,6 +354,9 @@ mmap(var, len, prot, flags, fh = 0, off_string)
             mg = sv_magicext(var, NULL, MMAP_MAGIC_TYPE, &mmap_magic_vtbl,
                              (const char *) info, 0);
             mg->mg_flags |= MGf_LOCAL;
+#ifdef USE_ITHREADS
+            mg->mg_flags |= MGf_DUP;
+#endif
         }
 
         ST(0) = sv_2mortal(newSVuv(PTR2UV(addr)));
