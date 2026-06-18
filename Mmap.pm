@@ -88,6 +88,22 @@ position:
 
     substr(VARIABLE, POSITION, LENGTH) = NEWVALUE
 
+=item $obj->sync( FLAGS )
+
+Flushes changes made to the underlying mmap'd region back to the filesystem.
+This is the method equivalent of C<msync()> for use with the tied interface.
+
+Calling C<msync()> directly on a tied variable does not work because Perl's
+parameter passing triggers C<FETCH>, which returns a copy of the data rather
+than the actual mmap'd scalar.  Use this method instead:
+
+    my $obj = Sys::Mmap->new( my $str, 8192, 'file.dat' ) or die $!;
+    substr( $str, 0, 5 ) = "Hello";
+    $obj->sync;                  # flush with MS_SYNC (default)
+    $obj->sync( MS_ASYNC );     # or schedule an async flush
+
+C<FLAGS> defaults to C<MS_SYNC> if omitted, matching the C<msync()> function.
+
 =item mmap(VARIABLE, LENGTH, PROTECTION, FLAGS, FILEHANDLE, OFFSET)
 
 Maps C<LENGTH> bytes of (the underlying contents of) C<FILEHANDLE> into your
@@ -289,6 +305,11 @@ sub STORE {
 sub FETCH {
   my $me = shift;
   $$me;
+}
+
+sub sync {
+  my $self = shift;
+  msync($$self, @_);
 }
 
 sub AUTOLOAD {
