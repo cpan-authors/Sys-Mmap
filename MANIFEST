@@ -15,5 +15,6 @@ t/hardwire.t
 t/mmap.t
 t/msync.t
 t/munmap_errors.t
+t/threads.t
 t/offset.t
 xt/author/pod.t
