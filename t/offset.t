@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 use Sys::Mmap;
 use Fcntl qw(O_WRONLY O_CREAT O_TRUNC O_RDONLY);
@@ -40,5 +40,23 @@ close FOO;
 }
 
 pass("Survived DESTROY with non-zero offset (no segfault)");
+
+# Test 3: large offset (> 2^31) correctly rejected on small file
+# Before the fix, atoi() would truncate offsets > 2GB, potentially wrapping
+# to a small positive value and silently mapping the wrong region.
+SKIP: {
+    use Config;
+    skip "off_t is 32-bit on this platform", 2
+        unless ($Config{lseeksize} || 0) >= 8;
+
+    my $big_offset = 2**31 + 4096;
+
+    my $data;
+    sysopen(FOO, $temp_file, O_RDONLY) or die "$temp_file: $!\n";
+    my $ok = eval { mmap($data, 0, PROT_READ, MAP_SHARED, FOO, $big_offset); 1 };
+    close FOO;
+    is($ok, undef, "large offset (> 2^31) on small file croaks");
+    like($@, qr/offset.*beyond end of file/i, "large offset error message is correct");
+}
 
 unlink($temp_file);

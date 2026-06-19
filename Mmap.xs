@@ -220,11 +220,6 @@ static MAGIC *find_mmap_magic(SV *sv) {
     return NULL;
 }
 
-#if _FILE_OFFSET_BITS > 32
-#define get_off(a) (atoll(a))
-#else
-#define get_off(a) (atoi(a))
-#endif
 
 
 MODULE = Sys::Mmap		PACKAGE = Sys::Mmap
@@ -268,15 +263,10 @@ mmap(var, len, prot, flags, fh = 0, off_string)
     PROTOTYPE: $$$$*;$
     CODE:
 
-    if(!SvTRUE(off_string)) {
-        off = 0;
-    }
-    else {
-        off = get_off(SvPVbyte_nolen(off_string));
-    }
-    
+    off = SvTRUE(off_string) ? (off_t)SvIV(off_string) : 0;
+
     if(off < 0) {
-        croak("mmap: Cannot operate on a negative offset (%s) ", SvPVbyte_nolen(off_string));
+        croak("mmap: Cannot operate on a negative offset (%"IVdf")", (IV)off);
     }
     
 	ST(0) = &PL_sv_undef;
