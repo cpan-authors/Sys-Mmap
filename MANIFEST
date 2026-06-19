@@ -9,6 +9,7 @@ Mmap.pm
 SECURITY.md
 Mmap.xs
 README
+t/closed_fh.t
 t/comprehensive.t
 t/constants.t
 t/hardwire.t

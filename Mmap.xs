@@ -254,12 +254,12 @@ hardwire(var, addr, len)
 
 
 SV *
-mmap(var, len, prot, flags, fh = 0, off_string)
+mmap(var, len, prot, flags, fh_sv = 0, off_string)
 	SV *		var
 	size_t		len
 	int		prot
 	int		flags
-	FILE *		fh
+	SV *		fh_sv
     SV *  off_string
 	int		fd = NO_INIT
 	MMAP_RETTYPE	addr = NO_INIT
@@ -274,23 +274,29 @@ mmap(var, len, prot, flags, fh = 0, off_string)
     else {
         off = get_off(SvPVbyte_nolen(off_string));
     }
-    
+
     if(off < 0) {
         croak("mmap: Cannot operate on a negative offset (%s) ", SvPVbyte_nolen(off_string));
     }
-    
+
 	ST(0) = &PL_sv_undef;
         if(flags&MAP_ANON) {
           fd = -1;
           if (!len)  {
-              /* i WANT to return undef and set $! but perlxs and perlxstut dont tell me how... waa! */
               croak("mmap: MAP_ANON specified, but no length specified. cannot infer length from file");
           }
         } else {
-	  fd = fileno(fh);
-          if (fd < 0) {
-              croak("mmap: file not open or does not have associated fileno");
-          }
+          IO *io;
+          PerlIO *fp;
+          if (!fh_sv)
+              croak("mmap: filehandle argument is required for non-MAP_ANON mappings");
+          io = sv_2io(fh_sv);
+          fp = IoIFP(io);
+          if (!fp)
+              croak("mmap: filehandle is not open");
+          fd = PerlIO_fileno(fp);
+          if (fd < 0)
+              croak("mmap: filehandle does not have an associated file descriptor");
 	  if (!len) {
 	      struct stat st;
 	      if (fstat(fd, &st) == -1) {
