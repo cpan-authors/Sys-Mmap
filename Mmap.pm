@@ -222,18 +222,13 @@ sub new {
     return undef;
   }
 
-  my $type = $_[0];
-  my $leng = $_[2];
-
   tie $_[1], $_[0], @_[2 .. scalar(@_)-1 ];
-  # tie $_[1], $type, $leng;
 
 }
 
 sub TIESCALAR {
 
   if(scalar @_ < 2) {
-    # print "debug: got args: ", join ', ', @_, "\n";
     warn 'Usage: tie $var, "Sys::Mmap", $desiredSize, $optionalFile;';
     return undef;
   }
@@ -258,8 +253,6 @@ sub TIESCALAR {
     if($leng > $fhsize) {
       $fhsize = $leng - $fhsize;
       print $fh ("\000" x $fhsize) or die $!;
-      # print $fh pack("a$fhsize", '') or die $!;
-      # while($fhsize) { print $fh "\000"; $fhsize--; }
     }
     $flags |= constant('MAP_FILE',0);
   } else {
@@ -272,11 +265,9 @@ sub TIESCALAR {
       constant('PROT_READ',0)|constant('PROT_WRITE',0),
       $flags,
       $file ? $fh : *main::STDOUT
-  ) or die $!;
+  );
 
   bless \$me, $type;
-
-  # XXX return $addr somehow...
 }
 
 sub STORE {
